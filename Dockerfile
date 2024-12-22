@@ -14,6 +14,6 @@ RUN groupadd --system --gid 1000 webui && \
     chown -R webui:webui .
 USER 1000:1000
 
-RUN ./webui.sh --prepare-environment-only --skip-torch-cuda-test
+RUN ./webui.sh --exit --skip-torch-cuda-test
 
-CMD [ "./webui.sh", "--skip-prepare-environment" ]
+CMD [ "./webui.sh", "--skip-prepare-environment", "--listen" ]

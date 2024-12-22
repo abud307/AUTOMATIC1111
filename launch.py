@@ -34,9 +34,6 @@ def main():
 
     launch_utils.startup_timer.record("initial startup")
 
-    if args.prepare_environment_only:
-        print("Setting up requirements wihout starting server as --setup-only flag was passed")
-
     with launch_utils.startup_timer.subcategory("prepare environment"):
         if not args.skip_prepare_environment:
             prepare_environment()
@@ -44,8 +41,7 @@ def main():
     if args.test_server:
         configure_for_tests()
 
-    if not args.prepare_environment_only:
-        start()
+    start()
 
 
 if __name__ == "__main__":
