@@ -16,7 +16,7 @@ import k_diffusion as K
 # When controlnet is enabled, the underlying model is not available to use, therefore we skip
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
-    x = p.init_latent
+    x = p.init_latent.clone()
 
     s_in = x.new_ones([x.shape[0]])
     if shared.sd_model.parameterization == "v":
@@ -83,7 +83,7 @@ Cached = namedtuple("Cached", ["noise", "cfg_scale", "steps", "latent", "origina
 
 # Based on changes suggested by briansemrau in https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/736
 def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps, correction_factor, sigma_intensity):
-    x = p.init_latent
+    x = p.init_latent.clone()
 
     s_in = x.new_ones([x.shape[0]])
     if shared.sd_model.parameterization == "v":
@@ -118,7 +118,7 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps, cor
 
         noise = noise_from_model(x, t, dt, sigma_in, cond_in, cfg_scale, dnw, skip)
 
-        if correction_factor > 0:
+        if correction_factor > 0: # runs model with previously calculated noise
             recalculated_noise = noise_from_model(x + noise, t, dt, sigma_in, cond_in, cfg_scale, dnw, skip)
             noise = recalculated_noise * correction_factor + noise * (1 - correction_factor)
 
@@ -132,6 +132,7 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps, cor
 
     shared.state.nextjob()
 
+    # Chooses between std and sigmas[-1]
     return x / (x.std()*(1 - sigma_intensity) + sigmas[-1]*sigma_intensity)
 
 def noise_from_model(x, t, dt, sigma_in, cond_in, cfg_scale, dnw, skip):
@@ -202,9 +203,10 @@ class Script(scripts.Script):
         cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0, elem_id=self.elem_id("cfg"))
         randomness = gr.Slider(label="Randomness", minimum=0.0, maximum=1.0, step=0.01, value=0.0, elem_id=self.elem_id("randomness"))
         sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False, elem_id=self.elem_id("sigma_adjustment"))
-        second_order_correction = gr.Slider(label="Correct noise by running model again", minimum=0.0, maximum=1.0, step=0.01, value=0.5, elem_id=self.elem_id("second_order_correction"))
-        noise_sigma_intensity = gr.Slider(label="Weight scaling std vs sigma based", minimum=-1.0, maximum=2.0, step=0.01, value=0.5, elem_id=self.elem_id("noise_sigma_intensity"))
-
+        second_order_correction = gr.Slider(label="Correct noise by running model again", minimum=0.0, maximum=1.0, step=0.01, value=0.5, elem_id=self.elem_id("second_order_correction"),
+                                            info="use 0 (disabled) for original script behaviour, 0.5 reccomended value. Runs the model again to recalculate noise and correct it by given factor. Higher adheres to original image more.")
+        noise_sigma_intensity = gr.Slider(label="Weight scaling std vs sigma based", minimum=-1.0, maximum=2.0, step=0.01, value=0.5, elem_id=self.elem_id("noise_sigma_intensity"),
+                                          info="use 1 for original script behaviour, 0.5 reccomended value. Decides whether to use fixed sigma value or dynamic standard deviation to scale noise. Lower gives softer images.")
         return [
             info,
             override_sampler,
