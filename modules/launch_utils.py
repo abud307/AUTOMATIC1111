@@ -323,7 +323,7 @@ def get_cuda_comp_cap():
     Blackwell consumer GPUs should return 12.0 data-center GPUs should return 10.0
     """
     try:
-        return float(subprocess.check_output(['nvidia-smi', '--query-gpu=compute_cap', '--format=noheader,csv'], text=True))
+        return max(map(float, subprocess.check_output(['nvidia-smi', '--query-gpu=compute_cap', '--format=noheader,csv'], text=True).splitlines()))
     except Exception as _:
         return 0.0
 
