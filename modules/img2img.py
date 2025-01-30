@@ -104,7 +104,10 @@ def process_batch(p, input, output_dir, inpaint_mask_dir, args, to_scale=False, 
             except Exception:
                 parsed_parameters = {}
 
-            p.prompt = prompt + (" " + parsed_parameters["Prompt"] if "Prompt" in parsed_parameters else "")
+            # p.prompt = prompt + (" " + parsed_parameters["Prompt"] if "Prompt" in parsed_parameters else "")
+            from modules.scripts import process_prompt
+            p.prompt = process_prompt(prompt)
+            
             p.negative_prompt = negative_prompt + (" " + parsed_parameters["Negative prompt"] if "Negative prompt" in parsed_parameters else "")
             p.seed = int(parsed_parameters.get("Seed", seed))
             p.cfg_scale = float(parsed_parameters.get("CFG scale", cfg_scale))
