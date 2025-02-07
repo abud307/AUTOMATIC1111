@@ -311,7 +311,6 @@ def get_state_dict_from_checkpoint(pl_sd):
 
 def read_metadata_from_safetensors(filename):
     import json
-    print(f"Reading metadata from {filename}...")
     with open(filename, mode="rb") as file:
         metadata_len = file.read(8)
         metadata_len = int.from_bytes(metadata_len, "little")
