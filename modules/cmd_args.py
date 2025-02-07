@@ -126,3 +126,4 @@ parser.add_argument("--skip-load-model-at-start", action='store_true', help="if 
 parser.add_argument("--unix-filenames-sanitization", action='store_true', help="allow any symbols except '/' in filenames. May conflict with your browser and file system")
 parser.add_argument("--filenames-max-length", type=int, default=128, help='maximal length of filenames of saved images. If you override it, it can conflict with your file system')
 parser.add_argument("--no-prompt-history", action='store_true', help="disable read prompt from last generation feature; settings this argument will not create '--data_path/params.txt' file")
+parser.add_argument("--local-hash-path", type=str, help="path to store full models hashes; It will generate hashes at first launch and will load it on next startups; Useless on local storage but significally reduces startup time when using remote models storage", default=None)

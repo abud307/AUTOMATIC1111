@@ -20,12 +20,11 @@ import numpy as np
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
-
+models_hash_path = shared.cmd_opts.local_hash_path
 checkpoints_list = {}
 checkpoint_aliases = {}
 checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
-
 
 class ModelType(enum.Enum):
     SD1 = 1
@@ -199,21 +198,50 @@ def get_closet_checkpoint_match(search_string):
 
     return None
 
-
-def model_hash(filename):
-    """old hash that only looks at a small part of the file and is prone to collisions"""
-
+def model_hash_generate(filename):
+    """Check existing and generate hash file that stores model hash"""
     try:
-        with open(filename, "rb") as file:
-            import hashlib
-            m = hashlib.sha256()
-
-            file.seek(0x100000)
-            m.update(file.read(0x10000))
-            return m.hexdigest()[0:8]
+        basedirpath = os.path.basename(os.path.dirname(filename))
+        basefilename = f"{basedirpath}/{os.path.basename(filename)}"
+        if not os.path.isfile(f"{models_hash_path}/{basefilename}.sha256"):
+            print(f"Generating hash: Hashsum not found for {models_hash_path}/{basefilename}.sha256. Proceeding...")
+            with open(filename, "rb") as file:
+                import hashlib
+                m = hashlib.sha256()
+                file.seek(0x100000)
+                m.update(file.read(0x10000))
+                if not os.path.isdir(f"{models_hash_path}/{basedirpath}"):
+                    print(f"Base dir for {basefilename} not found. Creating.")
+                    os.makedirs(f"{models_hash_path}/{basedirpath}", exist_ok=True)
+                with open(f"{models_hash_path}/{basefilename}.sha256", "w") as hash:
+                    print(f"hashsum is: {m.hexdigest()[0:8]}")
+                    hash.write(m.hexdigest()[0:8])
     except FileNotFoundError:
         return 'NOFILE'
 
+def model_hash(filename):
+    """old hash that only looks at a small part of the file and is prone to collisions"""
+    if models_hash_path:
+        try:
+            model_hash_generate(filename)
+            basedirpath = os.path.basename(os.path.dirname(filename))
+            filename = f"{basedirpath}/{os.path.basename(filename)}"
+            with open(f"{models_hash_path}/{filename}.sha256", "rb") as file:
+                print(f"Loading hashsum from {filename}.sha256...")
+                return file.read()
+        except FileNotFoundError:
+            return 'NOFILE'
+    else:
+        try:
+            with open(filename, "rb") as file:
+                import hashlib
+                m = hashlib.sha256()
+
+                file.seek(0x100000)
+                m.update(file.read(0x10000))
+                return m.hexdigest()[0:8]
+        except FileNotFoundError:
+            return 'NOFILE'
 
 def select_checkpoint():
     """Raises `FileNotFoundError` if no checkpoints are found."""
@@ -280,10 +308,36 @@ def get_state_dict_from_checkpoint(pl_sd):
 
     return pl_sd
 
+def save_metadata_from_safetensors(filename):
+    import json
+
+    with open(filename, mode="rb") as file:
+        metadata_len = file.read(8)
+        metadata_len = int.from_bytes(metadata_len, "little")
+        json_start = file.read(2)
+
+        assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
+
+        res = {}
+
+        try:
+            json_data = json_start + file.read(metadata_len-2)
+            json_obj = json.loads(json_data)
+            for k, v in json_obj.get("__metadata__", {}).items():
+                res[k] = v
+                if isinstance(v, str) and v[0:1] == '{':
+                    try:
+                        res[k] = json.loads(v)
+                    except Exception:
+                        pass
+        except Exception:
+             errors.report(f"Error reading metadata from file: {filename}", exc_info=True)
+
+        return res
 
 def read_metadata_from_safetensors(filename):
     import json
-
+    print(f"Reading metadata from {filename}...")
     with open(filename, mode="rb") as file:
         metadata_len = file.read(8)
         metadata_len = int.from_bytes(metadata_len, "little")
