@@ -308,32 +308,6 @@ def get_state_dict_from_checkpoint(pl_sd):
 
     return pl_sd
 
-def save_metadata_from_safetensors(filename):
-    import json
-
-    with open(filename, mode="rb") as file:
-        metadata_len = file.read(8)
-        metadata_len = int.from_bytes(metadata_len, "little")
-        json_start = file.read(2)
-
-        assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
-
-        res = {}
-
-        try:
-            json_data = json_start + file.read(metadata_len-2)
-            json_obj = json.loads(json_data)
-            for k, v in json_obj.get("__metadata__", {}).items():
-                res[k] = v
-                if isinstance(v, str) and v[0:1] == '{':
-                    try:
-                        res[k] = json.loads(v)
-                    except Exception:
-                        pass
-        except Exception:
-             errors.report(f"Error reading metadata from file: {filename}", exc_info=True)
-
-        return res
 
 def read_metadata_from_safetensors(filename):
     import json
