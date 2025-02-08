@@ -22,7 +22,7 @@ def list_config_states():
     all_config_states.clear()
     config_states = []
 
-    for key in list(config_states_cache):
+    for key in config_states_cache.iterkeys(reverse=True):
         config_states.append(config_states_cache[key])
 
     for cs in config_states:
