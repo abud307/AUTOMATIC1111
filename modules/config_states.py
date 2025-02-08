@@ -3,8 +3,8 @@ Supports saving and restoring webui and extensions from a known working set of c
 """
 
 import os
-import json
 import tqdm
+import diskcache
 
 from datetime import datetime
 import git
@@ -13,31 +13,20 @@ from modules import shared, extensions, errors
 from modules.paths_internal import script_path, config_states_dir
 
 all_config_states = {}
+config_states_cache = diskcache.Cache(config_states_dir, size_limit=2**20)  # 1 MB
 
 
 def list_config_states():
     global all_config_states
 
     all_config_states.clear()
-    os.makedirs(config_states_dir, exist_ok=True)
-
     config_states = []
-    for filename in os.listdir(config_states_dir):
-        if filename.endswith(".json"):
-            path = os.path.join(config_states_dir, filename)
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    j = json.load(f)
-                    assert "created_at" in j, '"created_at" does not exist'
-                    j["filepath"] = path
-                    config_states.append(j)
-            except Exception as e:
-                print(f'[ERROR]: Config states {path}, {e}')
 
-    config_states = sorted(config_states, key=lambda cs: cs["created_at"], reverse=True)
+    for key in list(config_states_cache):
+        config_states.append(config_states_cache[key])
 
     for cs in config_states:
-        timestamp = datetime.fromtimestamp(cs["created_at"]).strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.fromtimestamp(cs["created_at"]).strftime("%Y-%m-%d %H:%M:%S")
         name = cs.get("name", "Config")
         full_name = f"{name}: {timestamp}"
         all_config_states[full_name] = cs
@@ -92,12 +81,16 @@ def get_extension_config():
             "commit_hash": ext.commit_hash,
             "commit_date": ext.commit_date,
             "branch": ext.branch,
-            "have_info_from_repo": ext.have_info_from_repo
+            "have_info_from_repo": ext.have_info_from_repo,
         }
 
         ext_config[ext.name] = entry
 
     return ext_config
+
+
+def save_config(filename, config_state):
+    config_states_cache[filename] = config_state
 
 
 def get_config():
@@ -108,7 +101,7 @@ def get_config():
     return {
         "created_at": creation_time,
         "webui": webui_config,
-        "extensions": ext_config
+        "extensions": ext_config,
     }
 
 
@@ -196,3 +189,21 @@ def restore_extension_config(config):
             print(f"  + {ext.name}: {prev_commit} -> {result}")
         else:
             print(f"  ! {ext.name}: FAILURE ({result})")
+
+
+def convert_old_cached_data():
+    for file in os.listdir(config_states_dir):
+        if not file.endswith(".json"):
+            continue
+
+        import json
+
+        with open(os.path.join(config_states_dir, file)) as config:
+            config_state = json.load(config)
+
+        filename = os.path.splitext(file)[0]
+        config_states_cache[filename] = config_state
+        os.replace(os.path.join(config_states_dir, file), os.path.join(script_path, "tmp", file))
+
+
+convert_old_cached_data()

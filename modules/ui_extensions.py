@@ -13,7 +13,6 @@ import shutil
 import errno
 
 from modules import extensions, shared, paths, config_states, errors, restart
-from modules.paths_internal import config_states_dir
 from modules.call_queue import wrap_gradio_gpu_call
 
 available_extensions = {"extensions": []}
@@ -64,10 +63,9 @@ def save_config_state(name):
 
     current_config_state["name"] = name
     timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
-    filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
+    filename = f"{timestamp}_{name}"
     print(f"Saving backup of webui/extension state to {filename}.")
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(current_config_state, f, indent=4, ensure_ascii=False)
+    config_states.save_config(filename, current_config_state)
     config_states.list_config_states()
     new_value = next(iter(config_states.all_config_states.keys()), "Current")
     new_choices = ["Current"] + list(config_states.all_config_states.keys())
