@@ -1,0 +1,14 @@
+git clone https://github.com/Zyin055/Config-Presets.git
+git clone https://github.com/Bing-su/adetailer.git
+git clone https://github.com/richrobber2/canvas-zoom.git
+git clone https://github.com/pharmapsychotic/clip-interrogator-ext.git
+git clone https://github.com/BlafKing/sd-civitai-browser-plus.git
+git clone https://github.com/vladmandic/sd-extension-system-info.git
+git clone https://github.com/aigc-apps/sd-webui-EasyPhoto.git
+git clone https://github.com/continue-revolution/sd-webui-animatediff.git
+git clone https://github.com/thomasasfk/sd-webui-aspect-ratio-helper.git
+git clone https://github.com/Mikubill/sd-webui-controlnet.git
+git clone https://github.com/zanllp/sd-webui-infinite-image-browsing.git
+git clone https://github.com/namkazt/sd-webui-prompt-history
+git clone https://github.com/AlUlkesh/sd_delete_button.git
+git clone https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator.git
