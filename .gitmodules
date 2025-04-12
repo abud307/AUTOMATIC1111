@@ -1,0 +1,3 @@
+[submodule "repositories/stable-diffusion-webui/repositories/sgm"]
+	path = repositories/stable-diffusion-webui/repositories/sgm
+	url = https://github.com/Nam-AnhH/sgm.git
