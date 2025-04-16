@@ -54,6 +54,7 @@ function updateOnBackgroundChange() {
         updateModalImage();
     }
 }
+const updateModalImageIfVisible = updateOnBackgroundChange;
 
 function modalImageSwitch(offset) {
     var galleryButtons = all_gallery_buttons();
