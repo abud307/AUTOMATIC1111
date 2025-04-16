@@ -562,7 +562,27 @@ class Api:
             img2imgreq.init_images = None
             img2imgreq.mask = None
 
-        return models.ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
+        from modules.s3 import s3_client
+        from modules.env_to_yaml import get_env_var
+        import uuid
+
+        b64_string = b64images[0].decode("utf-8")
+        image_bytes = base64.b64decode(b64_string)
+
+        uid_int = uuid.uuid4().int
+
+        filename = str(uid_int)[0:18]
+        folder = "ddcn_results"
+
+        s3_client.put_object(
+            Bucket=get_env_var(key="S3_BUCKET"),
+            Key=f"{folder}/{filename}.jpg",
+            Body=image_bytes,
+            ContentType="image/jpeg"
+        )
+        s3_url = f"{get_env_var('S3_ENDPOINT')}/{get_env_var('S3_BUCKET')}/{folder}/{filename}.jpg"
+
+        return models.ImageToImageResponse(parameters=vars(img2imgreq), info=processed.js(), s3_url=s3_url)
 
     def extras_single_image_api(self, req: models.ExtrasSingleImageRequest):
         reqDict = setUpscalers(req)
@@ -925,4 +945,3 @@ class Api:
     def stop_webui(request):
         shared.state.server_command = "stop"
         return Response("Stopping.")
-

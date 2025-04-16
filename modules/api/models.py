@@ -137,9 +137,9 @@ class TextToImageResponse(BaseModel):
     info: str
 
 class ImageToImageResponse(BaseModel):
-    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
     info: str
+    s3_url: str
 
 class ExtrasBaseRequest(BaseModel):
     resize_mode: Literal[0, 1] = Field(default=0, title="Resize Mode", description="Sets the resize mode: 0 to upscale by upscaling_resize amount, 1 to upscale up to upscaling_resize_h x upscaling_resize_w.")
