@@ -577,15 +577,31 @@ class Api:
         filename = str(uid_int)[0:18]
         folder = "ddcn_results"
 
-        s3_client.put_object(
-            Bucket=get_env_var(key="S3_BUCKET"),
-            Key=f"{folder}/{filename}.jpg",
-            Body=image_bytes,
-            ContentType="image/jpeg"
-        )
-        s3_url = f"{get_env_var('S3_ENDPOINT')}/{get_env_var('S3_BUCKET')}/{folder}/{filename}.jpg"
+        retry = 0
 
-        return models.ImageToImageResponse(parameters=vars(img2imgreq), info=processed.js(), s3_url=s3_url)
+        while retry <= 5:
+
+            try:
+                s3_client.put_object(
+                    Bucket=get_env_var(key="S3_BUCKET"),
+                    Key=f"{folder}/{filename}.jpg",
+                    Body=image_bytes,
+                    ContentType="image/jpeg"
+                )
+                s3_url = f"{get_env_var('S3_ENDPOINT')}/{get_env_var('S3_BUCKET')}/{folder}/{filename}.jpg"
+                return models.ImageToImageResponse(parameters=vars(img2imgreq), info=processed.js(), s3_url=s3_url)
+
+            except Exception as e:
+                print(f"Error save on s3: {e}")
+                retry =+ 1
+                continue
+
+        else:
+            raise HTTPException(status_code=500, detail="Error save on s3:")
+
+
+
+
 
     def extras_single_image_api(self, req: models.ExtrasSingleImageRequest):
         reqDict = setUpscalers(req)
