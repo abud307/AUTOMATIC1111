@@ -490,11 +490,16 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
+        from modules.env_to_yaml import get_env_var
+        from modules.s3 import s3_client
+        from modules.download_from_s3 import get_photo_base64
+
         task_id = img2imgreq.force_task_id or create_task_id("img2img")
 
-        init_images = img2imgreq.init_images
-        if init_images is None:
+
+        if img2imgreq.init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
+        init_images = [get_photo_base64(s3_url=img2imgreq.init_images)]
 
         mask = img2imgreq.mask
         if mask:
@@ -562,8 +567,6 @@ class Api:
             img2imgreq.init_images = None
             img2imgreq.mask = None
 
-        from modules.s3 import s3_client
-        from modules.env_to_yaml import get_env_var
         import uuid
 
         b64_string = b64images[0].decode("utf-8")

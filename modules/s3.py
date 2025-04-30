@@ -1,3 +1,4 @@
+
 import boto3
 from botocore.client import Config
 
@@ -11,5 +12,3 @@ s3_client = boto3.client(
     region_name='ru-1',
     config=Config(s3={'addressing_style': 'path'})
 )
-
-
