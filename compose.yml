@@ -1,0 +1,29 @@
+services:
+  stable-diffusion:
+    build: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["all"]
+              capabilities: [gpu]
+    ports:
+      - 17860:17860
+    volumes:
+      - .:/products/app/
+    restart: unless-stopped
+    entrypoint: ["python","-m","http.server"]
+      #environment:
+      #- HTTP_PROXY=http://ngrok.samuelzuuka.com:15081
+      #- HTTPS_PROXY=http://ngrok.samuelzuuka.com:15081
+    # 访问外部主机的服务127.0.0.1:7860
+    # network_mode: host
+    # healthcheck:
+    #   test: python healthcheck.py || exit 1
+    #   interval: 5s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 10s
+  # redis:
+  #   image: "redis:alpine"
