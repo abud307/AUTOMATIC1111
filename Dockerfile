@@ -1,8 +1,6 @@
 FROM python:3.10.13
 
-# USER samuel
 WORKDIR /products/app
-# COPY . .
 COPY dockerenv/pip.conf ~/.pip/pip.conf
 RUN pip3 install requests
 
@@ -23,5 +21,3 @@ RUN apt-get update
 RUN apt-get install ffmpeg libsm6 libxext6  -y
 
 CMD ["python","launch.py","--xformers","--api","--no-half","--disable-nan-check","--port","17860"]
-# export HTTP_PROXY=http://ngrok.samuelzuuka.com:15081
-# export HTTPS_PROXY=http://ngrok.samuelzuuka.com:15081
