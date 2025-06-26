@@ -36,11 +36,10 @@ jobs:
       run: |
         curl -X POST http://127.0.0.1:7860/sdapi/v1/server-stop || true
 
-    - name: Mostrar log final do servidor
-      run: |
-        cat log.txt || true
-
     - name: Rodar webui e salvar log
       run: |
         python webui.py > log.txt 2>&1
 
+    - name: Mostrar log final do servidor
+      run: |
+        cat log.txt || true
