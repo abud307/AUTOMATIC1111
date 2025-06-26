@@ -39,3 +39,7 @@ jobs:
     - name: Mostrar log final do servidor
       run: |
         cat log.txt || true
+
+    - name: Mostrar log final do servidor
+      run: cat log.txt || true
+
