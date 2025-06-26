@@ -1,5 +1,9 @@
 import os
 import time
+from pathlib import Path
+from packaging.version import parse
+import gradio
+
 from modules import (
     shared,
     ui_tempdir,
@@ -10,23 +14,25 @@ from modules import (
     ui_extra_networks,
     timer,
     initialize,
-    script_callbacks
+    script_callbacks,
+    cmd_opts
 )
-from api import create_api  # ajuste se create_api for de outro módulo
-from packaging.version import parse
-from pathlib import Path
-import gradio
+
+from api import create_api
+
 
 def limpar_temp_dir():
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
         startup_timer.record("cleanup temp dir")
 
+
 def configurar_ui():
     shared.demo = ui.create_ui()
     startup_timer.record("create ui")
     if not cmd_opts.no_gradio_queue:
         shared.demo.queue(64)
+
 
 def decidir_autolancamento():
     if os.getenv('SD_WEBUI_RESTARTING') == '1':
@@ -36,6 +42,7 @@ def decidir_autolancamento():
     if shared.opts.auto_launch_browser == "Local":
         return not cmd_opts.webui_is_non_local
     return False
+
 
 def lancar_interface(auto_launch_browser):
     gradio_auth_creds = list(initialize_util.get_gradio_auth_creds()) or None
@@ -55,11 +62,13 @@ def lancar_interface(auto_launch_browser):
         root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else "",
     )
 
+
 def proteger_app(app):
     app.user_middleware = [
         x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware'
     ]
     initialize_util.setup_middleware(app)
+
 
 def configurar_apis(app):
     progress.setup_progress_api(app)
@@ -67,6 +76,7 @@ def configurar_apis(app):
     if cmd_opts.api:
         create_api(app)
     ui_extra_networks.add_pages_to_demo(app)
+
 
 def monitorar_comandos():
     while True:
@@ -76,6 +86,7 @@ def monitorar_comandos():
                 return server_command
             else:
                 print(f"Unknown server command: {server_command}")
+
 
 def warning_if_invalid_install_dir():
     if parse('3.32.0') <= parse(gradio.__version__) < parse('4'):
@@ -90,10 +101,11 @@ def warning_if_invalid_install_dir():
             print(f'''{"!"*25} Warning {"!"*25}
 WebUI is installed in a directory that has a leading dot (.) in one of its parent directories.
 This will prevent WebUI from functioning properly.
-Please move the installation to a different directory.
 Current path: "{webui_root}"
-For more information see: https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/13292
+Please move the installation to a different directory.
+More info: https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/13292
 {"!"*25} Warning {"!"*25}''')
+
 
 def webui():
     initialize.initialize()
@@ -142,3 +154,7 @@ def webui():
         script_callbacks.script_unloaded_callback()
         startup_timer.record("scripts unloaded callback")
         initialize.initialize_rest(reload_script_modules=True)
+
+
+if __name__ == "__main__":
+    webui()
