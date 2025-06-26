@@ -1,15 +1,32 @@
+import os
+import time
+from modules import (
+    shared,
+    ui_tempdir,
+    startup_timer,
+    initialize_util,
+    progress,
+    ui,
+    ui_extra_networks,
+    timer,
+    initialize,
+    script_callbacks
+)
+from api import create_api  # ajuste se create_api for de outro módulo
+from packaging.version import parse
+from pathlib import Path
+import gradio
+
 def limpar_temp_dir():
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
         startup_timer.record("cleanup temp dir")
-
 
 def configurar_ui():
     shared.demo = ui.create_ui()
     startup_timer.record("create ui")
     if not cmd_opts.no_gradio_queue:
         shared.demo.queue(64)
-
 
 def decidir_autolancamento():
     if os.getenv('SD_WEBUI_RESTARTING') == '1':
@@ -20,10 +37,8 @@ def decidir_autolancamento():
         return not cmd_opts.webui_is_non_local
     return False
 
-
 def lancar_interface(auto_launch_browser):
     gradio_auth_creds = list(initialize_util.get_gradio_auth_creds()) or None
-
     return shared.demo.launch(
         share=cmd_opts.share,
         server_name=initialize_util.gradio_server_name(),
@@ -40,13 +55,11 @@ def lancar_interface(auto_launch_browser):
         root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else "",
     )
 
-
 def proteger_app(app):
     app.user_middleware = [
         x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware'
     ]
     initialize_util.setup_middleware(app)
-
 
 def configurar_apis(app):
     progress.setup_progress_api(app)
@@ -54,7 +67,6 @@ def configurar_apis(app):
     if cmd_opts.api:
         create_api(app)
     ui_extra_networks.add_pages_to_demo(app)
-
 
 def monitorar_comandos():
     while True:
@@ -65,29 +77,9 @@ def monitorar_comandos():
             else:
                 print(f"Unknown server command: {server_command}")
 
-
 def warning_if_invalid_install_dir():
-    """
-    Shows a warning if the webui is installed under a path that contains a leading dot in any of its parent directories.
-
-    Gradio '/file=' route will block access to files that have a leading dot in the path segments.
-    We use this route to serve files such as JavaScript and CSS to the webpage,
-    if those files are blocked, the webpage will not function properly.
-    See https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/13292
-
-    This is a security feature was added to Gradio 3.32.0 and is removed in later versions,
-    this function replicates Gradio file access blocking logic.
-
-    This check should be removed when it's no longer applicable.
-    """
-    from packaging.version import parse
-    from pathlib import Path
-    import gradio
-
     if parse('3.32.0') <= parse(gradio.__version__) < parse('4'):
-
         def abspath(path):
-            """modified from Gradio 3.41.2 gradio.utils.abspath()"""
             if path.is_absolute():
                 return path
             is_symlink = path.is_symlink() or any(parent.is_symlink() for parent in path.parents)
@@ -103,16 +95,12 @@ Current path: "{webui_root}"
 For more information see: https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/13292
 {"!"*25} Warning {"!"*25}''')
 
-
 def webui():
     initialize.initialize()
-    from modules import shared, ui_tempdir, script_callbacks, ui, progress, ui_extra_networks
+    warning_if_invalid_install_dir()
 
-warning_if_invalid_install_dir()
-
-while True:
-    limpar_temp_dir()
-    
+    while True:
+        limpar_temp_dir()
         script_callbacks.before_ui_callback()
         startup_timer.record("scripts before_ui_callback")
 
