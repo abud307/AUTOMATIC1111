@@ -40,6 +40,7 @@ jobs:
       run: |
         cat log.txt || true
 
-    - name: Mostrar log final do servidor
-      run: cat log.txt || true
+    - name: Rodar webui e salvar log
+      run: |
+        python webui.py > log.txt 2>&1
 
