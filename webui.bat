@@ -10,9 +10,7 @@ if not defined VENV_DIR (set "VENV_DIR=%~dp0%venv")
 
 set SD_WEBUI_RESTART=tmp/restart
 set ERROR_REPORTING=FALSE
-
-mkdir tmp 2>NUL
-
+ 
 %PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_pip
 echo Couldn't launch python
